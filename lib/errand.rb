@@ -1,13 +1,36 @@
 #!/usr/bin/env ruby 
 
-$: << File.expand_path(File.join(File.dirname(__FILE__), '..'))
-require 'errand_backend'
+# Attempt to load the native RRD library provided by the operating system. 
+begin 
+  # Ruby Enterprise Edition will try to load everything from /usr/local/lib/ruby. 
+  # As the distribution generally installs the RRD bindings in /usr/lib/ruby, we
+  # have to explicitly hack the load path so REE knows where to find the Ruby 
+  # RRD bindings. 
+  case RUBY_VERSION[/^1\.\d/]
+  when /^1\.8/
+    version = "1.8"
+  when /^1\.9/
+    version = RUBY_VERSION
+  end
+  
+  %w(i386 i486).each do |arch|
+    $: << "/usr/lib/ruby/#{version}/#{arch}-linux"
+  end
+  
+  require 'RRD'
+rescue LoadError
+  exit 1
+end
+
+# Errand:
+# Wraps the RRD Ruby library provided by your distribution's package manager, 
+# exposing a more Ruby-like and accessible interface. 
 
 class Errand
   def initialize(opts={})
     raise ArgumentError unless opts[:filename]
     @filename = opts[:filename]
-    @backend = ::ErrandBackend
+    @backend = ::RRD
   end
 
   def dump(opts={})
