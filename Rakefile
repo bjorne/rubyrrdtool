@@ -9,7 +9,6 @@ begin
     gemspec.email = "lindsay@holmwood.id.au"
     gemspec.homepage = "http://auxesis.github.com/errand"
     gemspec.authors = ["Lindsay Holmwood"]
-    gemspec.extensions = ["ext/errand/extconf.rb"]
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: gem install jeweler"
