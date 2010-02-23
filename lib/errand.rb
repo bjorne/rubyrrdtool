@@ -13,8 +13,8 @@ begin
     version = RUBY_VERSION
   end
   
-  %w(i386 i486).each do |arch|
-    $: << "/usr/lib/ruby/#{version}/#{arch}-linux"
+  Dir.glob("/usr/lib/ruby/#{version}/*-linux").each do |dir|
+    $: << dir
   end
   
   require 'RRD'
