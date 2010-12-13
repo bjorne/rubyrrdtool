@@ -23,18 +23,30 @@ class Errand
     @backend.last(@filename)
   end
 
+  def step
+    @step ||= self.info["step"]
+  end
+
   def fetch(opts={})
-    start  = (opts[:start] || Time.now.to_i - 3600).to_s
-    finish = (opts[:finish] || Time.now.to_i).to_s
+    start  = (opts[:start] || Time.now.to_i - 3600)
+    finish = (opts[:finish] || Time.now.to_i)
+    resolution = opts[:resolution] || self.step
     function = opts[:function] ? opts[:function].to_s.upcase : "AVERAGE"
 
-    args = [@filename, "--start", start, "--end", finish, function]
+    if !opts[:exact_times]
+      diff = finish - start
+      finish = (finish.to_i/resolution)*resolution
+      start = finish - (diff.to_i/resolution)*resolution
+    end
+    
+    args = [@filename, "--resolution", resolution, "--start", start, "--end", finish, function]
 
     data = @backend.fetch(*args)
     start  = data[0]
     finish = data[1]
     labels = data[2]
     values = data[3]
+    data_resolution = data[4]
     points = {}
 
     # compose a saner representation of the data
@@ -42,11 +54,14 @@ class Errand
       points[label] = []
       values.each do |tuple|
         value = tuple[index].nan? ? nil : tuple[index]
+        if opts[:decimals]
+          value = (value * 10**opts[:decimals]).round.to_f / 10**opts[:decimals] unless value.nil?
+        end
         points[label] << value
       end
     end
 
-    {:start => start, :finish => finish, :data => points}
+    {:start => start, :finish => finish, :data => points, :data_resolution => data_resolution}
   end
 
   def create(opts={})
@@ -131,7 +146,7 @@ class Errand
   end
 
   def info
-    @backend.info(@filename)
+    @info ||= @backend.info(@filename)
   end
 
   # ordered array of data sources as defined in rrd
